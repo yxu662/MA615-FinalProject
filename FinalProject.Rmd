@@ -1,0 +1,20 @@
+---
+title: "MA615 Final Project"
+author: "Yin Xu"
+date: "2022-12-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+Oct_22 <- read.csv("stop_times 22Oct.txt")
+Sep_22 <- read.csv("stop_times 22Sep.txt")
+Aug_22 <- read.csv("stop_times 22Aug.txt")
+Jul_22 <- read.csv("stop_times 22Jul.txt")
+
+```
+
