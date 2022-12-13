@@ -9,12 +9,166 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r include=FALSE, message=FALSE}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggradar)
+library(tidyverse)
+library(scales)
+library(showtext)
+```
 
-```{r}
+## Read Data
+
+```{r warning=FALSE, message=FALSE, include=FALSE}
 Oct_22 <- read.csv("stop_times 22Oct.txt")
 Sep_22 <- read.csv("stop_times 22Sep.txt")
 Aug_22 <- read.csv("stop_times 22Aug.txt")
 Jul_22 <- read.csv("stop_times 22Jul.txt")
+Jun_22 <- read.csv("stop_times 22Jun.txt")
+May_22 <- read.csv("stop_times 22May.txt")
+Apr_22 <- read.csv("stop_times 22Apr.txt")
+Mar_22 <- read.csv("stop_times 22Mar.txt")
+Feb_22 <- read.csv("stop_times 22Feb.txt")
+Jan_22 <- read.csv("stop_times 22Jan.txt")
+Dec_21 <- read.csv("stop_times 21Dec.txt")
+Nov_21 <- read.csv("stop_times 21Nov.txt")
 
+stop_time_data <- rbind(Nov_21, Dec_21, Jan_22, Feb_22, Mar_22, Apr_22, May_22, Jun_22, Jul_22, Aug_22,
+                        Sep_22, Oct_22)
 ```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+ca_22Oct <- read.csv("ca_22Oct.txt") %>% drop_na()
+ca_22Sep <- read.csv("ca_22Sep.txt") %>% drop_na()
+ca_22Aug <- read.csv("ca_22Aug.txt") %>% drop_na()
+ca_22Jul <- read.csv("ca_22Jul.txt") %>% drop_na()
+ca_22Jun <- read.csv("ca_22Jun.txt") %>% drop_na()
+ca_22May <- read.csv("ca_22May.txt") %>% drop_na()
+ca_22Apr <- read.csv("ca_22Apr.txt") %>% drop_na()
+ca_22Mar <- read.csv("ca_22Mar.txt") %>% drop_na()
+ca_22Feb <- read.csv("ca_22Feb.txt") %>% drop_na()
+ca_22Jan <- read.csv("ca_22Jan.txt") %>% drop_na()
+ca_21Dec <- read.csv("ca_21Dec.txt") %>% drop_na()
+ca_21Nov <- read.csv("ca_21Nov.txt") %>% drop_na()
+
+ca_data <- rbind(ca_21Nov, ca_21Dec, ca_22Jan, ca_22Feb, ca_22Mar, ca_22Apr, ca_22May, ca_22Jun,
+                 ca_22Jul, ca_22Aug, ca_22Sep, ca_22Oct)
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+rp_22Oct <- read.csv("rp_22Oct.txt")
+rp_22Sep <- read.csv("rp_22Sep.txt")
+rp_22Aug <- read.csv("rp_22Aug.txt")
+rp_22Jul <- read.csv("rp_22Jul.txt")
+rp_22Jun <- read.csv("rp_22Jun.txt")
+rp_22May <- read.csv("rp_22May.txt")
+rp_22Apr <- read.csv("rp_22Apr.txt")
+rp_22Mar <- read.csv("rp_22Mar.txt")
+rp_22Feb <- read.csv("rp_22Feb.txt")
+rp_22Jan <- read.csv("rp_22Jan.txt")
+rp_21Dec <- read.csv("rp_21Dec.txt")
+rp_21Nov <- read.csv("rp_21Nov.txt")
+
+rp_data <- rbind(rp_21Nov, rp_21Dec, rp_22Jan, rp_22Feb, rp_22Mar, rp_22Apr, rp_22May, rp_22Jun, rp_22Jul, 
+                 rp_22Aug, rp_22Sep, rp_22Oct)
+```
+
+
+## Season vs Typicality
+```{r, echo=FALSE}
+#Clean Data
+new_data <- ca_data %>%
+  count(rating_description, service_schedule_typicality, sort = TRUE) %>%
+  pivot_wider(names_from = service_schedule_typicality, values_from = n) 
+new_data[is.na(new_data)] <- 0
+
+new_data <- new_data %>%
+  mutate(t_1 = `1`/(`1`+`2`+`3`+`4`+`5`),
+         t_2 = `2`/(`1`+`2`+`3`+`4`+`5`),
+         t_3 = `3`/(`1`+`2`+`3`+`4`+`5`),
+         t_4 = `4`/(`1`+`2`+`3`+`4`+`5`),
+         t_5 = `5`/(`1`+`2`+`3`+`4`+`5`)) 
+new_data <- new_data[,c(1,7:11)]
+```
+
+```{r echo=FALSE,warning=FALSE,fig.height=5,fig.width=7,fig.cap="Season vs Typicality”}
+#plot1
+plot_1 <- new_data %>%
+  ggradar(
+    font.radar = "roboto",
+    grid.label.size = 7,
+    axis.label.size = 7,
+    group.point.size = 3) 
+
+plot_1
+```
+
+## Days vs Typicality
+```{r, echo=FALSE}
+#Clean Data
+new_data_days <- ca_data %>%
+  count(service_schedule_type, service_schedule_typicality, sort = TRUE) %>%
+  pivot_wider(names_from = service_schedule_typicality, values_from = n) 
+new_data_days[is.na(new_data_days)] <- 0
+
+new_data_days <- new_data_days %>%
+  mutate(t_1 = `1`/(`1`+`2`+`3`+`4`+`5`),
+         t_2 = `2`/(`1`+`2`+`3`+`4`+`5`),
+         t_3 = `3`/(`1`+`2`+`3`+`4`+`5`),
+         t_4 = `4`/(`1`+`2`+`3`+`4`+`5`),
+         t_5 = `5`/(`1`+`2`+`3`+`4`+`5`))
+new_data_days <- new_data_days[,c(1,7:11)]
+```
+
+```{r, echo=FALSE, warning=FALSE,fig.height=5,fig.width=7,fig.cap="Days vs Typicality”}
+#plot2
+plot_2 <- new_data_days %>%
+  ggradar(
+    font.radar = "roboto",
+    grid.label.size = 7,
+    axis.label.size = 7,
+    group.point.size = 3) 
+
+plot_2
+```
+
+## rp data
+
+```{r, echo=FALSE}
+rp_data <- rp_data %>% filter(route_id == "Red" | route_id == "Orange" | route_id == "Green-B" | route_id == "Green-C" | route_id == "Green-D" | route_id == "Green-E" | route_id == "Blue")
+
+rp_data_route <- rp_data %>% 
+  count(route_id, route_pattern_typicality, sort = TRUE) %>%
+  pivot_wider(names_from = route_pattern_typicality, values_from = n)
+rp_data_route[is.na(rp_data_route)] <- 0
+
+rp_data_route <- rp_data_route %>%
+  mutate(t_1 = `1`/(`1`+`3`+`4`),
+         t_3 = `3`/(`1`+`3`+`4`),
+         t_4 = `4`/(`1`+`3`+`4`))
+rp_data_route <- rp_data_route[,c(1,5:7)]
+```
+
+```{r, echo=FALSE, warning=FALSE,fig.height=5,fig.width=7,fig.cap="Route vs Typicality”}
+#plot3
+plot_3 <- rp_data_route %>%
+  ggradar(
+    font.radar = "roboto",
+    grid.label.size = 7,
+    axis.label.size = 7,
+    group.point.size = 3) 
+
+plot_3
+```
+
+
+
+
+
+
+
+
+
 
