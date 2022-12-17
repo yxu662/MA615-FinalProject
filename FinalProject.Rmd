@@ -2,7 +2,9 @@
 title: "MA615 Final Project"
 author: "Yin Xu"
 date: "2022-12-10"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -17,9 +19,23 @@ library(ggradar)
 library(tidyverse)
 library(scales)
 library(showtext)
+library(ggplot2)
+library(grid)
+library(tidyverse)
+library(shadowtext)
 ```
 
-## Read Data
+# MBTA Data EDA
+
+This report includes the data from MBTA in last 12 months with all categories of transit (https://cdn.mbta.com/archive/archived_feeds.txt), and I picked one week from each month. The dataset is large, to run code faster and drop the useless data, I will do the data cleaning first.
+
+In this report, I'm gonna graph the distribution of the `stops`. Besides, I found that typicality is worthy of analysis.
+According to the reference(https://github.com/mbta/gtfs-documentation/blob/master/reference/gtfs.md#calendar_attributestxt), in this dataset, current valid values are:
+0 (or empty): Not defined; 1: Typical service with perhaps minor modifications; 2: Extra service supplements typical schedules; 3: Reduced holiday service is provided by typical Saturday or Sunday schedule; 4: Major changes in service due to a planned disruption, such as construction; 5: Major reductions in service for weather events or other atypical situations.
+
+
+
+## Read Data and Data Cleaning
 
 ```{r warning=FALSE, message=FALSE, include=FALSE}
 Oct_22 <- read.csv("stop_times 22Oct.txt")
@@ -57,56 +73,93 @@ ca_data <- rbind(ca_21Nov, ca_21Dec, ca_22Jan, ca_22Feb, ca_22Mar, ca_22Apr, ca_
                  ca_22Jul, ca_22Aug, ca_22Sep, ca_22Oct)
 ```
 
-```{r warning=FALSE, message=FALSE, echo=FALSE}
-rp_22Oct <- read.csv("rp_22Oct.txt")
-rp_22Sep <- read.csv("rp_22Sep.txt")
-rp_22Aug <- read.csv("rp_22Aug.txt")
-rp_22Jul <- read.csv("rp_22Jul.txt")
-rp_22Jun <- read.csv("rp_22Jun.txt")
-rp_22May <- read.csv("rp_22May.txt")
-rp_22Apr <- read.csv("rp_22Apr.txt")
-rp_22Mar <- read.csv("rp_22Mar.txt")
-rp_22Feb <- read.csv("rp_22Feb.txt")
-rp_22Jan <- read.csv("rp_22Jan.txt")
-rp_21Dec <- read.csv("rp_21Dec.txt")
-rp_21Nov <- read.csv("rp_21Nov.txt")
 
-rp_data <- rbind(rp_21Nov, rp_21Dec, rp_22Jan, rp_22Feb, rp_22Mar, rp_22Apr, rp_22May, rp_22Jun, rp_22Jul, 
-                 rp_22Aug, rp_22Sep, rp_22Oct)
+```{r, echo=FALSE}
+stops <- read.csv("stops.txt")
+
+df <- stops %>% inner_join(stop_time_data,by=c('stop_id'))
 ```
+
+```{r warning=FALSE, echo=FALSE}
+stoptime_new <- stop_time_data[,c(4,10)]
+new_data <- stoptime_new %>%
+  inner_join(stops, by = c('stop_id'))
+new_data <- new_data[,c(1,2,4,10)]
+
+newdata_df <- new_data %>% 
+  count(zone_id) 
+```
+
+## Count stops
+
+```{r}
+newdata_df %>%
+  ggplot( aes(x=zone_id, y=n)) +
+    geom_bar(stat="identity", fill="#f68060", alpha=.6, width=.4) +
+    coord_flip() +
+    xlab("") +
+    theme_bw()
+```
+The graph shows that bus has the most stops.
+
 
 
 ## Season vs Typicality
-```{r, echo=FALSE}
+```{r}
 #Clean Data
-new_data <- ca_data %>%
+new_cadata <- ca_data %>%
   count(rating_description, service_schedule_typicality, sort = TRUE) %>%
   pivot_wider(names_from = service_schedule_typicality, values_from = n) 
-new_data[is.na(new_data)] <- 0
+new_cadata[is.na(new_cadata)] <- 0
 
-new_data <- new_data %>%
+new_cadata <- new_cadata %>%
   mutate(t_1 = `1`/(`1`+`2`+`3`+`4`+`5`),
          t_2 = `2`/(`1`+`2`+`3`+`4`+`5`),
          t_3 = `3`/(`1`+`2`+`3`+`4`+`5`),
          t_4 = `4`/(`1`+`2`+`3`+`4`+`5`),
          t_5 = `5`/(`1`+`2`+`3`+`4`+`5`)) 
-new_data <- new_data[,c(1,7:11)]
+new_cadata <- new_cadata[,c(1,7:11)]
 ```
 
-```{r echo=FALSE,warning=FALSE,fig.height=5,fig.width=7,fig.cap="Season vs Typicality”}
+```{r warning=FALSE, message=FALSE}
+library(ggradar)
+library(palmerpenguins)
+library(tidyverse)
+library(scales)
+library(showtext)
+
+font_add_google("Roboto", "roboto")
+showtext_auto()
+
 #plot1
-plot_1 <- new_data %>%
+#code citation: gg gallery
+plot_1 <- new_cadata %>%
   ggradar(
     font.radar = "roboto",
-    grid.label.size = 7,
-    axis.label.size = 7,
-    group.point.size = 3) 
-
+    grid.label.size = 7,  
+    axis.label.size = 7, 
+    group.point.size = 3 
+  )+
+  labs(title = "Season vs Typicality") + 
+  theme(
+      plot.background = element_rect(fill = "#fbf9f4", color = "#fbf9f4"),
+      panel.background = element_rect(fill = "#fbf9f4", color = "#fbf9f4"),
+      plot.title.position = "plot",
+      plot.title = element_text(
+        family = "lobstertwo", 
+        size = 20,
+        face = "bold", 
+        color = "#2a475e"
+    )
+  )
 plot_1
 ```
 
+According to this graph, we can know that in most seasons, the most typical service reported is typical service with perhaps minor modifications, but in summer/fall, major changes in service due to a planned disruption becomes the most, such as construction. Therefore, it can be concluded as MBTA generally tend to be constructed in summer/fall.
+
+
 ## Days vs Typicality
-```{r, echo=FALSE}
+```{r}
 #Clean Data
 new_data_days <- ca_data %>%
   count(service_schedule_type, service_schedule_typicality, sort = TRUE) %>%
@@ -122,49 +175,31 @@ new_data_days <- new_data_days %>%
 new_data_days <- new_data_days[,c(1,7:11)]
 ```
 
-```{r, echo=FALSE, warning=FALSE,fig.height=5,fig.width=7,fig.cap="Days vs Typicality”}
-#plot2
+
+```{r warning=FALSE, message=FALSE}
 plot_2 <- new_data_days %>%
   ggradar(
     font.radar = "roboto",
     grid.label.size = 7,
     axis.label.size = 7,
-    group.point.size = 3) 
+    group.point.size = 3) +
+  labs(title = "Days vs Typicality") + 
+  theme(
+      plot.background = element_rect(fill = "#fbf9f4", color = "#fbf9f4"),
+      panel.background = element_rect(fill = "#fbf9f4", color = "#fbf9f4"),
+      plot.title.position = "plot",
+      plot.title = element_text(
+        family = "lobstertwo", 
+        size = 20,
+        face = "bold", 
+        color = "#2a475e"
+    )
+  )
 
 plot_2
 ```
 
-## rp data
-
-```{r, echo=FALSE}
-rp_data <- rp_data %>% filter(route_id == "Red" | route_id == "Orange" | route_id == "Green-B" | route_id == "Green-C" | route_id == "Green-D" | route_id == "Green-E" | route_id == "Blue")
-
-rp_data_route <- rp_data %>% 
-  count(route_id, route_pattern_typicality, sort = TRUE) %>%
-  pivot_wider(names_from = route_pattern_typicality, values_from = n)
-rp_data_route[is.na(rp_data_route)] <- 0
-
-rp_data_route <- rp_data_route %>%
-  mutate(t_1 = `1`/(`1`+`3`+`4`),
-         t_3 = `3`/(`1`+`3`+`4`),
-         t_4 = `4`/(`1`+`3`+`4`))
-rp_data_route <- rp_data_route[,c(1,5:7)]
-```
-
-```{r, echo=FALSE, warning=FALSE,fig.height=5,fig.width=7,fig.cap="Route vs Typicality”}
-#plot3
-plot_3 <- rp_data_route %>%
-  ggradar(
-    font.radar = "roboto",
-    grid.label.size = 7,
-    axis.label.size = 7,
-    group.point.size = 3) 
-
-plot_3
-```
-
-
-
+This graph shows that weekdays or weekends do not influence the typical service that much, weekdays have the less type4(Major changes in service due to a planned disruption, such as construction), MBTA might consider that the construction cannot influence the traffic in weekdays, so this kind of issue might be moved to saturdays and sundays.
 
 
 
