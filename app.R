@@ -39,6 +39,8 @@ df_mbta <- df_mbta %>%
   separate(stop_desc, c("name", "line", "decs"), sep = "-") %>%
   drop_na(line)
 
+#df_mbta <- read.csv("df_mbta.csv")
+
 
 ui <- dashboardPage(
   dashboardHeader(),
@@ -81,7 +83,7 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
-
+x
 
 
 
